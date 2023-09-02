@@ -1,7 +1,7 @@
-import { App } from "./src/class/app";
-import { Bike } from "./src/class/bike";
-import { Rent } from "./src/class/rent";
-import { User } from "./src/class/user";
+import { App } from "./app";
+import { Bike } from "./bike";
+import { Rent } from "./rent";
+import { User } from "./user";
 
 const bike = new Bike('mountain bike', 'mountain', 
     123, 500, 100.5, 'desc', 5, [])
