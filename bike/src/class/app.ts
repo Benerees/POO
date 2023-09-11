@@ -1,79 +1,88 @@
 import { Bike } from "./bike";
 import { Rent } from "./rent";
 import { User } from "./user";
-import 'crypto';
+import 'crypto'
+import bcrypt from 'bcrypt';
 
 export class App {
     users: User[] = []
     bikes: Bike[] = []
     rents: Rent[] = []
 
-    findUser(id: string): User | undefined {
-        return this.users.find(user => user.id === id)
+    listUser(): User[]{
+        return this.users;
     }
 
-    registerUser(user: User): void {
+    listRent(): Rent[]{
+        return this.rents;
+    }
+
+    listBikes(): Bike[]{
+        return this.bikes;
+    }
+
+    findUser(email: string): User {
+        return this.users.find(user => user.email === email)
+    }
+
+    registerUser(user: User): string {
         for (const rUser of this.users) {
             if (rUser.email === user.email) {
                 throw new Error('Duplicate user.')
             }
         }
-        user.id = crypto.randomUUID()
+        const newId = crypto.randomUUID()
+        user.id = newId
+        user.password = bcrypt.hash(user.password, 1);
+        console.log(user.password);
         this.users.push(user)
+        return newId
+    }
+
+    registerBike(bike: Bike): string {
+        const newId = crypto.randomUUID()
+        bike.id = newId
+        this.bikes.push(bike)
+        return newId
     }
 
     removeUser(email: string): void {
-        const index = this.users.findIndex(user => user.email === email)
-        if (index)
-            this.users.splice(index, 1);
-        else
-            throw new Error('Cannot find User ')
-
-    }
-
-    findBike(id: string): Bike | undefined {
-        return this.bikes.find(bike => bike.id === id)
-    }
-
-    registerBike(bike: Bike): void {
-        for (const rBikes of this.bikes) {
-            if (rBikes.name === bike.name) {
-                throw new Error('Duplicate Bike')
-            }
+        const userIndex = this.users.findIndex(user => user.email === email)
+        if (userIndex !== -1) {
+            this.users.splice(userIndex, 1)
+            return
         }
-        bike.id = crypto.randomUUID()
-        this.bikes.push(bike)
+        throw new Error('User does not exist.')
+    }
+    
+    rentBike(bikeId: string, userEmail: string, startDate: Date, endDate: Date): void {
+        const bike = this.bikes.find(bike => bike.id === bikeId)
+        if (!bike) {
+            throw new Error('Bike not found.')
+        }
+        const user = this.findUser(userEmail)
+        if (!user) {
+            throw new Error('User not found.')
+        }
+        const bikeRents = this.rents.filter(rent =>
+            rent.bike.id === bikeId && !rent.dateReturned
+        )
+        const newRent = Rent.create(bikeRents, bike, user, startDate, endDate)
+        this.rents.push(newRent)
     }
 
-    rentBike(bikeId: string, userId: string, dateFrom: Date, dateTo: Date): void {
-        const bike = this.findBike(bikeId);
-
-        if (bike == undefined)
-            throw new Error('Cannot find Bike')
-
-        const user = this.findUser(userId);
-
-        if (user == undefined)
-            throw new Error('Cannot find User')
-
-        const rent = Rent.create(this.rents, bike, user, dateFrom, dateTo)
-
-        if (rent == undefined)
-            throw new Error('Date unavailable')
-
-        this.rents.push(rent)
-    }
-
-    findRent(id: string): Rent | undefined {
-        return this.rents.find(rent => rent.id === id)
-    }
-
-    returnBike(rentId: string, dateReturned: Date) {
-        const rent = this.findRent(rentId);
-
-        if (rent == undefined)
-            throw new Error('Cannot find Rent')
-
-        rent.dateReturned = dateReturned;
+    returnBike(bikeId: string, userEmail: string) {
+        const today = new Date()
+        const rent = this.rents.find(rent => 
+            rent.bike.id === bikeId &&
+            rent.user.email === userEmail &&
+            rent.dateReturned === undefined &&
+            rent.dateFrom <= today
+        )
+        if (rent) {
+            rent.dateReturned = today
+            return
+        }
+        throw new Error('Rent not found.')
     }
 }
