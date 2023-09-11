@@ -84,6 +84,8 @@ export class App {
             rent.bike.available === false
         )
         if (rent) {
+            rent.bike.available = true
+
             rent.end = today
             rent.price = this.diffHours(rent.end, rent.start) * rent.bike.rate 
 
