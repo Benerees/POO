@@ -1,30 +1,22 @@
 import { Bike } from "./bike";
 import { User } from "./user";
+import crypto from 'crypto'
 
 export class Rent {
+
     private constructor(
         public bike: Bike,
         public user: User,
-        public dateFrom: Date,
-        public dateTo: Date,
-        public dateReturned?: Date,
-        public id?: string
+        public start: Date,
+        public end?: Date,
+        public id?: string,
+        public price?: number
     ) { }
 
-    static create(rents: Rent[], bike: Bike, user: User,
+    static create(bike: Bike, user: User,
         startDate: Date, endDate: Date): Rent | undefined {
-        const canCreate = Rent.canRent(rents, startDate, endDate)
-        if (canCreate) return new Rent(bike, user, startDate, endDate, null, crypto.randomUUID())
-        throw new Error('Overlapping dates.')
+        return new Rent(bike, user, startDate, endDate, crypto.randomUUID())
     }
 
-    static canRent(rents: Rent[], startDate: Date, endDate: Date): boolean {
-        for (const rent of rents) {
-            if (startDate <= rent.dateTo && endDate >= rent.dateFrom) {
-                return false
-            }
-        }
-        return true
-    }
 }
 
