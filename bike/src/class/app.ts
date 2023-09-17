@@ -1,7 +1,7 @@
 import { Bike } from "./bike";
 import { Rent } from "./rent";
 import { User } from "./user";
-import 'crypto'
+import crypto from 'crypto'
 import bcrypt from 'bcrypt';
 
 export class App {
@@ -9,15 +9,15 @@ export class App {
     bikes: Bike[] = []
     rents: Rent[] = []
 
-    listUser(): User[]{
+    listUser(): User[] {
         return this.users;
     }
 
-    listRent(): Rent[]{
+    listRent(): Rent[] {
         return this.rents;
     }
 
-    listBikes(): Bike[]{
+    listBikes(): Bike[] {
         return this.bikes;
     }
 
@@ -54,35 +54,49 @@ export class App {
         }
         throw new Error('User does not exist.')
     }
-    
+
     rentBike(bikeId: string, userEmail: string, startDate: Date, endDate: Date): void {
         const bike = this.bikes.find(bike => bike.id === bikeId)
         if (!bike) {
             throw new Error('Bike not found.')
         }
+        if (bike.available == false) {
+            throw new Error('Bike is not available')
+        }
+
         const user = this.findUser(userEmail)
         if (!user) {
             throw new Error('User not found.')
         }
-        const bikeRents = this.rents.filter(rent =>
-            rent.bike.id === bikeId && !rent.dateReturned
-        )
-        const newRent = Rent.create(bikeRents, bike, user, startDate, endDate)
+
+        bike.available = false;
+
+        const newRent = Rent.create(bike, user, startDate, endDate)
+
         this.rents.push(newRent)
     }
 
     returnBike(bikeId: string, userEmail: string) {
         const today = new Date()
-        const rent = this.rents.find(rent => 
+        const rent = this.rents.find(rent =>
             rent.bike.id === bikeId &&
             rent.user.email === userEmail &&
-            rent.dateReturned === undefined &&
-            rent.dateFrom <= today
+            rent.bike.available === false
         )
         if (rent) {
-            rent.dateReturned = today
-            return
+            rent.bike.available = true
+
+            rent.end = today
+            rent.price = this.diffHours(rent.end, rent.start) * rent.bike.rate 
+
+            return rent.price
         }
         throw new Error('Rent not found.')
+    }
+
+    diffHours(dt2: Date, dt1: Date): number {
+        var diff = (dt2.getTime() - dt1.getTime()) / 1000;
+        diff /= (60 * 60);
+        return Math.abs(Math.round(diff));
     }
 }
