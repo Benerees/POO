@@ -3,6 +3,7 @@ import { Rent } from "./rent";
 import { User } from "./user";
 import crypto from 'crypto'
 import bcrypt from 'bcrypt';
+import { Location } from "./location";
 
 export class App {
     users: User[] = []
@@ -78,12 +79,16 @@ export class App {
         this.rents.push(newRent)
     }
 
-    refreshLocation(bike: Bike, latitude: number, longitude: number) {
-        bike.latitude = latitude;
-        bike.longitude = longitude;
+    moveBikeTo(bikeId: string, location: Location) {
+        const bike = this.bikes.find(bike => bike.id === bikeId)
+        
+        if(!bike) throw new Error('Bike not found.')
+
+        bike.location.latitude = location.latitude
+        bike.location.longitude = location.longitude
     }
 
-    returnBike(bikeId: string, userEmail: string, latitude: number, longitude: number) {
+    returnBike(bikeId: string, userEmail: string, location: Location) {
         const now = new Date()
         const rent = this.rents.find(rent =>
             rent.bike.id === bikeId &&
@@ -91,8 +96,10 @@ export class App {
             rent.bike.available === false
         )
         if (!rent) throw new Error('Rent not found.')
-        rent.bike.available = true
 
+        this.moveBikeTo(bikeId, location);
+
+        rent.bike.available = true
         rent.end = now
         rent.price = this.diffHours(rent.end, rent.start) * rent.bike.rate
 
