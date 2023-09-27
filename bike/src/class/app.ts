@@ -4,6 +4,11 @@ import { User } from "./user";
 import crypto from 'crypto'
 import bcrypt from 'bcrypt';
 import { Location } from "./location";
+import { UnavailableBikeError } from "../errors/unavailable-bike-error";
+import { BikeNotFoundError } from "../errors/bike-not-found-error";
+import { UserNotFoundError } from "../errors/user-not-found-error";
+import { RentNotFoundError } from "../errors/rent-not-found-error";
+import { DuplicateUserError } from "../errors/duplicate-user-error";
 
 export class App {
     users: User[] = []
@@ -53,21 +58,21 @@ export class App {
             this.users.splice(userIndex, 1)
             return
         }
-        throw new Error('User does not exist.')
+        throw new UserNotFoundError()
     }
 
     rentBike(bikeId: string, userEmail: string): void {
         const bike = this.bikes.find(bike => bike.id === bikeId)
         if (!bike) {
-            throw new Error('Bike not found.')
+            throw new BikeNotFoundError()
         }
         if (bike.available == false) {
-            throw new Error('Bike is not available')
+            throw new UnavailableBikeError()
         }
 
         const user = this.findUser(userEmail)
         if (!user) {
-            throw new Error('User not found.')
+            throw new UserNotFoundError()
         }
 
         const now = new Date();
@@ -82,7 +87,7 @@ export class App {
     moveBikeTo(bikeId: string, location: Location) {
         const bike = this.bikes.find(bike => bike.id === bikeId)
         
-        if(!bike) throw new Error('Bike not found.')
+        if(!bike) throw new BikeNotFoundError()
 
         bike.location.latitude = location.latitude
         bike.location.longitude = location.longitude
@@ -95,7 +100,7 @@ export class App {
             rent.user.email === userEmail &&
             rent.bike.available === false
         )
-        if (!rent) throw new Error('Rent not found.')
+        if (!rent) throw new RentNotFoundError()
 
         this.moveBikeTo(bikeId, location);
 
