@@ -28,13 +28,15 @@ export class App {
     }
 
     findUser(email: string): User {
-        return this.users.find(user => user.email === email)
+        const user = this.users.find(user => user.email === email)
+        if(user) return user
+        throw new UserNotFoundError
     }
 
     registerUser(user: User): string {
         for (const rUser of this.users) {
             if (rUser.email === user.email) {
-                throw new Error('Duplicate user.')
+                throw new DuplicateUserError()
             }
         }
         const newId = crypto.randomUUID()
