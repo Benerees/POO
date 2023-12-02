@@ -13,7 +13,7 @@ import { FakeRentRepo } from "./doubles/fake-rent-repo"
 import { UserRepo } from "../src/ports/user-repo"
 import { BikeRepo } from "../src/ports/bike-repo"
 import { RentRepo } from "../src/ports/rent-repo"
-import { RentOpenError } from "../src/errors/rent-open-error"
+import { UserHasOpenRentError } from "../src/errors/user-has-open-rent-error"
 
 
 let userRepo: UserRepo
@@ -116,13 +116,13 @@ describe('App', () => {
             .rejects.toThrow(UserNotFoundError)
     })
 
-    it('should throw user not found error when trying to remove an unregistered user', async () => {
+    it ('should throw user not found error when trying to remove an unregistered user', async () => {
         const app = new App(userRepo, bikeRepo, rentRepo)
         await expect(app.removeUser('fake@mail.com'))
             .rejects.toThrow(UserNotFoundError)
     })
 
-    it('should correctly register user', async () => {
+    it ('should correctly register user', async () => {
         const app = new App(userRepo, bikeRepo, rentRepo)
         const user = new User('jose', 'jose@mail.com', '1234')
         await app.registerUser(user)
@@ -130,15 +130,15 @@ describe('App', () => {
             .resolves.toEqual(user)
     })
 
-    it('should throw rent open erro when trying to remove a user with rent open', async () => {
+    it ('should not remove user with open rents', async () => {
         const app = new App(userRepo, bikeRepo, rentRepo)
-        const user = new User('jose', 'jose@mail.com', '1234')
+        const user = new User('Jose', 'jose@mail.com', '1234')
         await app.registerUser(user)
         const bike = new Bike('caloi mountainbike', 'mountain bike',
             1234, 1234, 100.0, 'My bike', 5, [])
         await app.registerBike(bike)
         await app.rentBike(bike.id, user.email)
         await expect(app.removeUser(user.email))
-            .rejects.toThrow(RentOpenError)
+            .rejects.toThrow(UserHasOpenRentError)
     })
 })
